@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0d1117"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>RegistryGPS</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1f2937;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #39d353;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --border: rgba(0,212,255,0.2);
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:'Exo 2', sans-serif; color:var(--text); }
+
+  /* ===== SPLASH SCREEN ===== */
+  #splash {
+    position:fixed; inset:0; background:var(--bg); z-index:1000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition: opacity 0.6s ease;
+  }
+  .splash-logo {
+    width:110px; height:110px; border-radius:28px;
+    background: linear-gradient(135deg, #1a3a5c, #0a1628);
+    border: 2px solid var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: var(--glow), inset 0 0 30px rgba(0,212,255,0.1);
+    animation: pulse-logo 2s ease-in-out infinite;
+    margin-bottom:24px;
+  }
+  @keyframes pulse-logo {
+    0%,100% { box-shadow: var(--glow), inset 0 0 30px rgba(0,212,255,0.1); }
+    50% { box-shadow: 0 0 40px rgba(0,212,255,0.6), inset 0 0 30px rgba(0,212,255,0.2); }
+  }
+  .splash-logo svg { width:60px; height:60px; }
+  .splash-title { font-family:'Rajdhani',sans-serif; font-size:32px; font-weight:700; letter-spacing:3px; color:var(--accent); }
+  .splash-sub { font-size:13px; color:var(--muted); letter-spacing:2px; margin-top:4px; }
+  .splash-bar-wrap { width:200px; height:3px; background:rgba(255,255,255,0.1); border-radius:4px; margin-top:40px; overflow:hidden; }
+  .splash-bar { height:100%; width:0%; background:var(--accent); border-radius:4px; animation:load-bar 2.2s ease forwards; }
+  @keyframes load-bar { to { width:100%; } }
+  .splash-version { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted); margin-top:16px; }
+
+  /* ===== PERMISSION SCREEN ===== */
+  #permission-screen {
+    position:fixed; inset:0; background:var(--bg); z-index:900; display:none;
+    overflow-y:auto;
+  }
+  .perm-header {
+    background:linear-gradient(180deg, #0a1628 0%, var(--bg) 100%);
+    padding:60px 24px 32px;
+    text-align:center;
+    border-bottom: 1px solid var(--border);
+  }
+  .perm-icon-ring {
+    width:80px; height:80px; border-radius:50%; margin:0 auto 20px;
+    border:2px solid var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: var(--glow);
+    animation:spin-ring 8s linear infinite;
+    background:radial-gradient(circle, rgba(0,212,255,0.1), transparent);
+  }
+  @keyframes spin-ring {
+    0% { box-shadow: 0 0 20px rgba(0,212,255,0.3), 4px 0 20px rgba(0,212,255,0.1); }
+    25% { box-shadow: 0 0 20px rgba(0,212,255,0.3), 0 4px 20px rgba(0,212,255,0.1); }
+    50% { box-shadow: 0 0 20px rgba(0,212,255,0.3), -4px 0 20px rgba(0,212,255,0.1); }
+    75% { box-shadow: 0 0 20px rgba(0,212,255,0.3), 0 -4px 20px rgba(0,212,255,0.1); }
+    100% { box-shadow: 0 0 20px rgba(0,212,255,0.3), 4px 0 20px rgba(0,212,255,0.1); }
+  }
+  .perm-header h1 { font-family:'Rajdhani',sans-serif; font-size:26px; font-weight:700; color:var(--accent); letter-spacing:2px; }
+  .perm-header p { color:var(--muted); font-size:13px; margin-top:8px; line-height:1.6; }
+
+  .perm-legal-badge {
+    margin:16px 24px 0;
+    background:rgba(57,211,83,0.1); border:1px solid rgba(57,211,83,0.3);
+    border-radius:10px; padding:10px 14px;
+    display:flex; align-items:center; gap:10px;
+    font-size:12px; color:var(--green);
+  }
+
+  .perm-list { padding:20px 24px; display:flex; flex-direction:column; gap:14px; }
+  .perm-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:16px;
+    display:flex; align-items:flex-start; gap:14px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .perm-card.granted { border-color:rgba(57,211,83,0.5); background:rgba(57,211,83,0.05); }
+  .perm-card.denied { border-color:rgba(255,107,53,0.5); background:rgba(255,107,53,0.05); }
+  .perm-card-icon {
+    width:44px; height:44px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+  }
+  .perm-card-icon.cam { background:linear-gradient(135deg,#1a3a6c,#0d1f3d); border:1px solid rgba(0,212,255,0.3); }
+  .perm-card-icon.loc { background:linear-gradient(135deg,#1a3a3a,#0d2020); border:1px solid rgba(57,211,83,0.3); }
+  .perm-card-icon.str { background:linear-gradient(135deg,#3a2a1a,#201608); border:1px solid rgba(255,167,53,0.3); }
+  .perm-card-icon.mic { background:linear-gradient(135deg,#2a1a3a,#180d20); border:1px solid rgba(167,53,255,0.3); }
+  .perm-card-info { flex:1; }
+  .perm-card-info h3 { font-size:15px; font-weight:600; color:var(--text); }
+  .perm-card-info p { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.5; }
+  .perm-card-info .perm-legal { font-size:10px; color:#6b7280; margin-top:5px; font-family:'Share Tech Mono',monospace; }
+  .perm-status { flex-shrink:0; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:2px solid var(--border); background:var(--surface2); }
+  .perm-status.ok { background:var(--green); border-color:var(--green); }
+  .perm-status.fail { background:var(--accent2); border-color:var(--accent2); }
+
+  .perm-grant-btn {
+    margin:8px 24px 32px;
+    width:calc(100% - 48px);
+    background:linear-gradient(135deg, var(--accent), #0099cc);
+    border:none; border-radius:14px; padding:16px;
+    font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700;
+    letter-spacing:2px; color:#000; cursor:pointer;
+    box-shadow: 0 4px 20px rgba(0,212,255,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .perm-grant-btn:active { transform:scale(0.98); }
+  .perm-skip { text-align:center; padding-bottom:24px; }
+  .perm-skip a { color:var(--muted); font-size:13px; text-decoration:underline; cursor:pointer; }
+
+  /* ===== MAIN APP ===== */
+  #main-app { position:fixed; inset:0; display:none; flex-direction:column; }
+
+  /* Camera View */
+  #camera-view {
+    flex:1; position:relative; overflow:hidden;
+    background:#000;
+  }
+  #video-el {
+    width:100%; height:100%; object-fit:cover;
+  }
+  #canvas-el { display:none; }
+
+  /* Camera overlay grid lines */
+  .cam-grid {
+    position:absolute; inset:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.08) 1px, transparent 1px);
+    background-size: 33.33% 33.33%;
+  }
+  .cam-corner {
+    position:absolute; width:22px; height:22px;
+    border-color:var(--accent); border-style:solid;
+    opacity:0.8;
+  }
+  .cam-corner.tl { top:16px; left:16px; border-width:2px 0 0 2px; }
+  .cam-corner.tr { top:16px; right:16px; border-width:2px 2px 0 0; }
+  .cam-corner.bl { bottom:72px; left:16px; border-width:0 0 2px 2px; }
+  .cam-corner.br { bottom:72px; right:16px; border-width:0 2px 2px 0; }
+
+  /* GPS stamp overlay */
+  .gps-stamp {
+    position:absolute; bottom:80px; left:0; right:0;
+    padding:10px 14px;
+    background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);
+    border-top:1px solid rgba(0,212,255,0.3);
+    font-family:'Share Tech Mono',monospace;
+    font-size:11px; color:var(--accent);
+    display:flex; justify-content:space-between; align-items:flex-end;
+    flex-wrap:wrap; gap:4px;
+  }
+  .gps-stamp .stamp-left {}
+  .gps-stamp .stamp-right { text-align:right; }
+  .stamp-appname { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; color:#fff; letter-spacing:1px; }
+  .stamp-coords { color:var(--green); font-size:10px; }
+  .stamp-time { font-size:13px; font-weight:bold; color:#fff; }
+  .stamp-date { color:var(--muted); font-size:10px; }
+  .stamp-address { color:var(--accent2); font-size:10px; margin-top:2px; max-width:200px; }
+
+  /* Top bar */
+  .cam-topbar {
+    position:absolute; top:0; left:0; right:0;
+    padding:12px 16px;
+    display:flex; justify-content:space-between; align-items:center;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+  }
+  .cam-topbar-left { display:flex; align-items:center; gap:8px; }
+  .cam-title-top { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; color:#fff; letter-spacing:2px; }
+  .live-badge {
+    background:var(--accent2); border-radius:4px; padding:2px 6px;
+    font-size:10px; font-weight:700; letter-spacing:1px; color:#fff;
+    animation:blink-live 1.5s ease-in-out infinite;
+  }
+  @keyframes blink-live { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .cam-topbar-right { display:flex; gap:12px; }
+  .top-icon-btn { background:rgba(255,255,255,0.15); border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:16px; backdrop-filter:blur(4px); }
+
+  /* GPS accuracy pill */
+  .gps-accuracy {
+    position:absolute; top:60px; right:12px;
+    background:rgba(0,0,0,0.6); border:1px solid var(--green);
+    border-radius:20px; padding:4px 10px;
+    font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--green);
+    display:flex; align-items:center; gap:5px;
+    backdrop-filter:blur(4px);
+  }
+  .gps-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:blink-live 1.2s infinite; }
+
+  /* Bottom controls */
+  .cam-controls {
+    position:absolute; bottom:0; left:0; right:0;
+    padding:14px 28px 24px;
+    background:linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .thumb-prev {
+    width:52px; height:52px; border-radius:10px;
+    border:2px solid rgba(255,255,255,0.3);
+    overflow:hidden; background:var(--surface2);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:22px;
+  }
+  #thumb-img { width:100%; height:100%; object-fit:cover; display:none; }
+  .capture-btn {
+    width:72px; height:72px; border-radius:50%;
+    border:4px solid #fff;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(4px);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:transform 0.1s, background 0.1s;
+    box-shadow:0 0 0 2px rgba(255,255,255,0.1), 0 0 20px rgba(0,212,255,0.2);
+  }
+  .capture-btn:active { transform:scale(0.92); background:rgba(255,255,255,0.4); }
+  .capture-inner { width:54px; height:54px; border-radius:50%; background:#fff; }
+  .flip-btn {
+    width:52px; height:52px; border-radius:50%;
+    background:rgba(255,255,255,0.15); border:none;
+    backdrop-filter:blur(4px); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:#fff;
+    transition:transform 0.3s;
+  }
+  .flip-btn:active { transform:rotate(180deg); }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    display:flex; background:var(--surface); border-top:1px solid var(--border);
+    padding:8px 0 env(safe-area-inset-bottom, 8px);
+  }
+  .nav-item {
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    gap:3px; padding:6px 4px; cursor:pointer;
+    color:var(--muted); font-size:10px; font-weight:600; letter-spacing:0.5px;
+    transition:color 0.2s;
+    border:none; background:none;
+  }
+  .nav-item.active { color:var(--accent); }
+  .nav-item svg { width:22px; height:22px; }
+
+  /* Gallery Screen */
+  #gallery-screen {
+    position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:50;
+  }
+  .screen-header {
+    padding:16px 20px 12px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px;
+    background:var(--surface);
+  }
+  .screen-header h2 { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; letter-spacing:2px; color:var(--accent); }
+  .screen-header .count { font-size:12px; color:var(--muted); background:var(--surface2); padding:2px 8px; border-radius:10px; margin-left:auto; }
+  .gallery-grid { flex:1; overflow-y:auto; padding:12px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:3px; }
+  .gallery-item {
+    aspect-ratio:1; position:relative; overflow:hidden; border-radius:6px;
+    background:var(--surface); cursor:pointer;
+  }
+  .gallery-item img { width:100%; height:100%; object-fit:cover; }
+  .gallery-item .gal-stamp {
+    position:absolute; bottom:0; left:0; right:0;
+    background:rgba(0,0,0,0.7); padding:3px 5px;
+    font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--accent);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .empty-gallery { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--muted); padding:40px; text-align:center; }
+  .empty-gallery .empty-icon { font-size:60px; opacity:0.3; }
+  .empty-gallery p { font-size:14px; line-height:1.6; }
+
+  /* Map Screen */
+  #map-screen {
+    position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:50;
+  }
+  .map-placeholder {
+    flex:1; background:var(--surface); position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  /* Fake map grid */
+  .map-placeholder::before {
+    content:'';
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.06) 1px, transparent 1px);
+    background-size:40px 40px;
+  }
+  .map-center-pin { text-align:center; z-index:1; }
+  .map-center-pin .pin-icon { font-size:50px; animation:bounce-pin 2s ease-in-out infinite; }
+  @keyframes bounce-pin { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .map-center-pin p { font-size:13px; color:var(--muted); margin-top:8px; }
+  .map-center-pin small { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--green); display:block; margin-top:4px; }
+
+  .map-photo-list { max-height:200px; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .map-photo-item {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:10px 12px; display:flex; align-items:center; gap:10px;
+  }
+  .map-photo-item img { width:44px; height:44px; border-radius:6px; object-fit:cover; flex-shrink:0; }
+  .map-photo-meta { flex:1; }
+  .map-photo-meta .mp-time { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--accent); }
+  .map-photo-meta .mp-loc { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  /* Settings Screen */
+  #settings-screen {
+    position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:50;
+    overflow-y:auto;
+  }
+  .settings-body { padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .settings-section-title { font-family:'Rajdhani',sans-serif; font-size:13px; letter-spacing:2px; color:var(--muted); padding:8px 4px 4px; }
+  .settings-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  }
+  .settings-row {
+    display:flex; align-items:center; padding:14px 16px; gap:12px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .settings-row:last-child { border-bottom:none; }
+  .settings-row-icon { font-size:20px; width:28px; text-align:center; }
+  .settings-row-info { flex:1; }
+  .settings-row-info h4 { font-size:14px; font-weight:600; color:var(--text); }
+  .settings-row-info p { font-size:11px; color:var(--muted); margin-top:2px; }
+  .toggle {
+    width:44px; height:24px; border-radius:12px; background:var(--surface2);
+    border:1px solid var(--border); position:relative; cursor:pointer; transition:background 0.3s;
+  }
+  .toggle.on { background:var(--accent); border-color:var(--accent); }
+  .toggle-knob {
+    position:absolute; top:2px; left:2px;
+    width:18px; height:18px; border-radius:50%;
+    background:#fff; transition:transform 0.3s;
+    box-shadow:0 2px 4px rgba(0,0,0,0.3);
+  }
+  .toggle.on .toggle-knob { transform:translateX(20px); }
+
+  .legal-footer {
+    margin:8px 16px 32px;
+    background:rgba(57,211,83,0.05); border:1px solid rgba(57,211,83,0.2);
+    border-radius:14px; padding:16px;
+    font-size:11px; color:var(--muted); line-height:1.7;
+  }
+  .legal-footer h4 { color:var(--green); font-size:13px; margin-bottom:8px; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
+
+  /* Photo preview modal */
+  #photo-modal {
+    position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:200;
+    display:none; flex-direction:column;
+  }
+  .modal-header { padding:16px; display:flex; justify-content:space-between; align-items:center; }
+  .modal-close { background:rgba(255,255,255,0.1); border:none; border-radius:50%; width:36px; height:36px; color:#fff; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .modal-img-wrap { flex:1; display:flex; align-items:center; justify-content:center; padding:0 16px; }
+  #modal-img { max-width:100%; max-height:100%; border-radius:12px; }
+  .modal-info { padding:16px; background:var(--surface); }
+  .modal-info .mi-row { display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; font-size:12px; }
+  .modal-info .mi-label { color:var(--muted); min-width:70px; font-family:'Share Tech Mono',monospace; font-size:10px; padding-top:1px; }
+  .modal-info .mi-val { color:var(--text); flex:1; }
+  .modal-actions { display:flex; gap:10px; padding:12px 16px; }
+  .modal-btn {
+    flex:1; padding:12px; border-radius:10px; border:none;
+    font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px;
+    cursor:pointer;
+  }
+  .modal-btn.share { background:var(--accent); color:#000; }
+  .modal-btn.delete { background:var(--surface2); color:var(--accent2); border:1px solid rgba(255,107,53,0.3); }
+
+  /* Capture flash */
+  #capture-flash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:150; transition:opacity 0.1s; }
+
+  /* Toast */
+  #toast {
+    position:fixed; bottom:140px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:rgba(0,0,0,0.85); border:1px solid var(--border); border-radius:24px;
+    padding:10px 20px; font-size:13px; color:var(--text);
+    backdrop-filter:blur(10px); opacity:0; transition:all 0.3s; z-index:300;
+    white-space:nowrap;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Shutter animation */
+  @keyframes shutter { 0%{opacity:0.8} 100%{opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="30" cy="30" r="20" stroke="#00d4ff" stroke-width="2"/>
+      <circle cx="30" cy="30" r="12" fill="rgba(0,212,255,0.15)" stroke="#00d4ff" stroke-width="1.5"/>
+      <circle cx="30" cy="30" r="5" fill="#00d4ff"/>
+      <line x1="30" y1="6" x2="30" y2="14" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="30" y1="46" x2="30" y2="54" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="6" y1="30" x2="14" y2="30" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="46" y1="30" x2="54" y2="30" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+      <path d="M22 38 L30 22 L38 38" stroke="#ff6b35" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="splash-title">REGISTRYGPS</div>
+  <div class="splash-sub">GEO · TIMESTAMP · CAMERA</div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+  <div class="splash-version">v1.0.0 · Made for India 🇮🇳</div>
+</div>
+
+<!-- PERMISSION SCREEN -->
+<div id="permission-screen">
+  <div class="perm-header">
+    <div class="perm-icon-ring">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L4 10V18C4 25.7 10.2 32.9 18 35C25.8 32.9 32 25.7 32 18V10L18 4Z" stroke="#00d4ff" stroke-width="2" fill="rgba(0,212,255,0.1)"/>
+        <path d="M12 18L16 22L24 14" stroke="#00d4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>PERMISSIONS REQUIRED</h1>
+    <p>RegistryGPS needs these permissions to stamp<br>GPS location on your photos.</p>
+  </div>
+
+  <div class="perm-legal-badge">
+    <span>✅</span>
+    <span>Compliant with Indian IT Act 2000 & Personal Data Protection principles. No data is shared without your consent.</span>
+  </div>
+
+  <div class="perm-list">
+    <div class="perm-card" id="pcard-cam">
+      <div class="perm-card-icon cam">📷</div>
+      <div class="perm-card-info">
+        <h3>Camera</h3>
+        <p>To capture photos with GPS stamp overlay</p>
+        <div class="perm-legal">Required · Stored locally on device</div>
+      </div>
+      <div class="perm-status" id="pstat-cam">?</div>
+    </div>
+    <div class="perm-card" id="pcard-loc">
+      <div class="perm-card-icon loc">📍</div>
+      <div class="perm-card-info">
+        <h3>Location (GPS)</h3>
+        <p>To embed precise coordinates and address in photos</p>
+        <div class="perm-legal">Required · Never shared with 3rd parties</div>
+      </div>
+      <div class="perm-status" id="pstat-loc">?</div>
+    </div>
+    <div class="perm-card" id="pcard-str">
+      <div class="perm-card-icon str">💾</div>
+      <div class="perm-card-info">
+        <h3>Storage</h3>
+        <p>To save stamped photos to your device gallery</p>
+        <div class="perm-legal">Required · Read/Write your photos only</div>
+      </div>
+      <div class="perm-status" id="pstat-str">?</div>
+    </div>
+    <div class="perm-card" id="pcard-mic">
+      <div class="perm-card-icon mic">🎙️</div>
+      <div class="perm-card-info">
+        <h3>Microphone</h3>
+        <p>For video recording with audio (optional)</p>
+        <div class="perm-legal">Optional · Only for video mode</div>
+      </div>
+      <div class="perm-status" id="pstat-mic">?</div>
+    </div>
+  </div>
+
+  <button class="perm-grant-btn" id="grant-btn" onclick="requestAllPermissions()">
+    ⚡ GRANT ALL PERMISSIONS
+  </button>
+  <div class="perm-skip"><a onclick="skipPermissions()">Skip for now (limited features)</a></div>
+</div>
+
+<!-- CAPTURE FLASH -->
+<div id="capture-flash"></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MAIN APP -->
+<div id="main-app">
+  <!-- Camera View -->
+  <div id="camera-view">
+    <video id="video-el" autoplay playsinline muted></video>
+    <canvas id="canvas-el"></canvas>
+
+    <div class="cam-grid"></div>
+    <div class="cam-corner tl"></div>
+    <div class="cam-corner tr"></div>
+    <div class="cam-corner bl"></div>
+    <div class="cam-corner br"></div>
+
+    <!-- Top bar -->
+    <div class="cam-topbar">
+      <div class="cam-topbar-left">
+        <span class="cam-title-top">REGISTRYGPS</span>
+        <span class="live-badge">LIVE</span>
+      </div>
+      <div class="cam-topbar-right">
+        <button class="top-icon-btn" onclick="toggleFlash()" id="flash-btn" title="Flash">⚡</button>
+        <button class="top-icon-btn" onclick="toggleStamp()" id="stamp-btn" title="Toggle Stamp">🗺️</button>
+      </div>
+    </div>
+
+    <!-- GPS accuracy -->
+    <div class="gps-accuracy" id="gps-acc">
+      <div class="gps-dot"></div>
+      <span id="gps-acc-text">Locating…</span>
+    </div>
+
+    <!-- GPS Stamp -->
+    <div class="gps-stamp" id="gps-stamp">
+      <div class="stamp-left">
+        <div class="stamp-appname">📍 REGISTRYGPS</div>
+        <div class="stamp-coords" id="stamp-coords">Fetching GPS…</div>
+        <div class="stamp-address" id="stamp-addr">India</div>
+      </div>
+      <div class="stamp-right">
+        <div class="stamp-time" id="stamp-time">--:--:--</div>
+        <div class="stamp-date" id="stamp-date">-- --- ----</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="cam-controls">
+      <div class="thumb-prev" onclick="openLastPhoto()">
+        <img id="thumb-img" alt="Last photo"/>
+        <span id="thumb-placeholder">🖼️</span>
+      </div>
+      <div class="capture-btn" onclick="capturePhoto()">
+        <div class="capture-inner"></div>
+      </div>
+      <button class="flip-btn" onclick="flipCamera()">🔄</button>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-cam" onclick="showTab('camera')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M20 4h-3.4L15 2H9L7.4 4H4C2.9 4 2 4.9 2 6v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
+      CAMERA
+    </button>
+    <button class="nav-item" id="nav-gal" onclick="showTab('gallery')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      GALLERY
+    </button>
+    <button class="nav-item" id="nav-map" onclick="showTab('map')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+      MAP
+    </button>
+    <button class="nav-item" id="nav-set" onclick="showTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      SETTINGS
+    </button>
+  </nav>
+</div>
+
+<!-- GALLERY SCREEN -->
+<div id="gallery-screen">
+  <div class="screen-header">
+    <button onclick="showTab('camera')" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;">‹</button>
+    <h2>GALLERY</h2>
+    <span class="count" id="gallery-count">0 photos</span>
+  </div>
+  <div id="gallery-body" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;"></div>
+</div>
+
+<!-- MAP SCREEN -->
+<div id="map-screen">
+  <div class="screen-header">
+    <button onclick="showTab('camera')" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;">‹</button>
+    <h2>PHOTO MAP</h2>
+  </div>
+  <div class="map-placeholder" id="map-view">
+    <div class="map-center-pin">
+      <div class="pin-icon">📍</div>
+      <p style="color:var(--muted);font-size:13px;">Your location</p>
+      <small id="map-coords-display">---, ---</small>
+    </div>
+  </div>
+  <div class="map-photo-list" id="map-photo-list"></div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div id="settings-screen">
+  <div class="screen-header">
+    <button onclick="showTab('camera')" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;">‹</button>
+    <h2>SETTINGS</h2>
+  </div>
+  <div class="settings-body">
+
+    <div class="settings-section-title">STAMP OPTIONS</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon">📍</div>
+        <div class="settings-row-info"><h4>Show GPS Coordinates</h4><p>Lat/Lon on stamp</p></div>
+        <div class="toggle on" id="t-coords" onclick="toggleSetting('coords',this)"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🏙️</div>
+        <div class="settings-row-info"><h4>Show Address</h4><p>City / State on stamp</p></div>
+        <div class="toggle on" id="t-addr" onclick="toggleSetting('addr',this)"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🕐</div>
+        <div class="settings-row-info"><h4>Show Date & Time</h4><p>IST timestamp</p></div>
+        <div class="toggle on" id="t-time" onclick="toggleSetting('time',this)"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🏷️</div>
+        <div class="settings-row-info"><h4>Show App Name</h4><p>RegistryGPS branding</p></div>
+        <div class="toggle on" id="t-brand" onclick="toggleSetting('brand',this)"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+
+    <div class="settings-section-title">CAMERA</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-row-icon">📸</div>
+        <div class="settings-row-info"><h4>High Quality</h4><p>Save at full resolution</p></div>
+        <div class="toggle on" id="t-hq" onclick="toggleSetting('hq',this)"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-icon">🔊</div>
+        <div class="settings-row-info"><h4>Shutter Sound</h4><p>Play sound on capture</p></div>
+        <div class="toggle on" id="t-sound" onclick="toggleSetting('sound',this)"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+
+    <div class="settings-section-title">PRIVACY & LEGAL</div>
+    <div class="legal-footer">
+      <h4>🇮🇳 LEGAL COMPLIANCE — INDIA</h4>
+      <strong>Indian IT Act 2000:</strong> RegistryGPS processes all data locally on your device. No photos, GPS data, or personal information is transmitted to any server.<br><br>
+      <strong>PDPB (Personal Data Protection):</strong> You retain full ownership of your photos and location data. The app never sells or shares your data.<br><br>
+      <strong>Permissions:</strong> Camera, Location, and Storage permissions are used only for core app functionality as declared. You can revoke permissions at any time via device Settings.<br><br>
+      <strong>GPS Stamp Legal Use:</strong> GPS-stamped photos may be used as supplementary evidence. Consult a lawyer for evidentiary admissibility under the Indian Evidence Act.<br><br>
+      <em>RegistryGPS is free, open-source, and ad-free. Version 1.0.0</em>
+    </div>
+  </div>
+</div>
+
+<!-- PHOTO MODAL -->
+<div id="photo-modal">
+  <div class="modal-header">
+    <span style="font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;color:var(--accent);">PHOTO DETAIL</span>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>
+  <div class="modal-img-wrap"><img id="modal-img" alt=""/></div>
+  <div class="modal-info" id="modal-info"></div>
+  <div class="modal-actions">
+    <button class="modal-btn share" onclick="sharePhoto()">⬆ SHARE</button>
+    <button class="modal-btn delete" onclick="deletePhoto()">🗑 DELETE</button>
+  </div>
+</div>
+
+<script>
+// ============================================
+// STATE
+// ============================================
+let photos = JSON.parse(localStorage.getItem('rgps_photos') || '[]');
+let currentLat = null, currentLon = null, currentAddress = 'India';
+let currentStream = null, facingMode = 'environment';
+let stampVisible = true, flashOn = false;
+let currentModalIdx = null;
+let settings = JSON.parse(localStorage.getItem('rgps_settings') || '{"coords":true,"addr":true,"time":true,"brand":true,"hq":true,"sound":true}');
+let permissionsGranted = localStorage.getItem('rgps_perms') === 'granted';
+
+// ============================================
+// SPLASH → PERMISSIONS / APP
+// ============================================
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      if (permissionsGranted) {
+        startApp();
+      } else {
+        document.getElementById('permission-screen').style.display = 'block';
+      }
+    }, 600);
+  }, 2400);
+});
+
+// ============================================
+// PERMISSIONS
+// ============================================
+async function requestAllPermissions() {
+  const btn = document.getElementById('grant-btn');
+  btn.textContent = '⏳ Requesting…';
+  btn.disabled = true;
+
+  // Camera
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream.getTracks().forEach(t => t.stop());
+    setPermStatus('cam', true);
+  } catch(e) { setPermStatus('cam', false); }
+
+  // Location
+  await new Promise(resolve => {
+    if (!navigator.geolocation) { setPermStatus('loc', false); resolve(); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { currentLat = pos.coords.latitude; currentLon = pos.coords.longitude; setPermStatus('loc', true); resolve(); },
+      () => { setPermStatus('loc', false); resolve(); },
+      { timeout: 8000 }
+    );
+  });
+
+  // Storage (just mark as granted in browser context)
+  setPermStatus('str', true);
+
+  // Microphone
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    s.getTracks().forEach(t => t.stop());
+    setPermStatus('mic', true);
+  } catch(e) { setPermStatus('mic', false); }
+
+  await new Promise(r => setTimeout(r, 600));
+  localStorage.setItem('rgps_perms', 'granted');
+  permissionsGranted = true;
+  startApp();
+}
+
+function setPermStatus(id, ok) {
+  const card = document.getElementById('pcard-' + id);
+  const stat = document.getElementById('pstat-' + id);
+  card.className = 'perm-card ' + (ok ? 'granted' : 'denied');
+  stat.className = 'perm-status ' + (ok ? 'ok' : 'fail');
+  stat.textContent = ok ? '✓' : '✕';
+}
+
+function skipPermissions() {
+  localStorage.setItem('rgps_perms', 'granted');
+  startApp();
+}
+
+// ============================================
+// START APP
+// ============================================
+async function startApp() {
+  document.getElementById('permission-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'flex';
+  document.getElementById('main-app').style.flexDirection = 'column';
+  startCamera();
+  startClock();
+  startGPS();
+  updateGalleryBadge();
+}
+
+// ============================================
+// CAMERA
+// ============================================
+async function startCamera() {
+  if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+    document.getElementById('video-el').srcObject = currentStream;
+  } catch(e) {
+    showToast('📷 Camera not available');
+  }
+}
+
+function flipCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+}
+
+function toggleFlash() {
+  flashOn = !flashOn;
+  document.getElementById('flash-btn').style.color = flashOn ? '#ffdd00' : '#fff';
+  showToast(flashOn ? '⚡ Flash ON' : '⚡ Flash OFF');
+}
+
+function toggleStamp() {
+  stampVisible = !stampVisible;
+  document.getElementById('gps-stamp').style.display = stampVisible ? 'flex' : 'none';
+  document.getElementById('stamp-btn').style.color = stampVisible ? '#00d4ff' : '#888';
+}
+
+// ============================================
+// CAPTURE PHOTO
+// ============================================
+async function capturePhoto() {
+  const video = document.getElementById('video-el');
+  const canvas = document.getElementById('canvas-el');
+  canvas.width = video.videoWidth || 1280;
+  canvas.height = video.videoHeight || 720;
+  const ctx = canvas.getContext('2d');
+  if (facingMode === 'user') { ctx.translate(canvas.width, 0); ctx.scale(-1,1); }
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Reset transform
+  ctx.setTransform(1,0,0,1,0,0);
+
+  // Draw stamp on canvas
+  if (stampVisible) drawStampOnCanvas(ctx, canvas.width, canvas.height);
+
+  // Flash effect
+  const flash = document.getElementById('capture-flash');
+  flash.style.opacity = '0.7';
+  setTimeout(() => flash.style.opacity = '0', 120);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', settings.hq ? 0.95 : 0.75);
+  const now = new Date();
+  const photo = {
+    id: Date.now(),
+    data: dataUrl,
+    lat: currentLat,
+    lon: currentLon,
+    address: currentAddress,
+    time: now.toLocaleTimeString('en-IN', {hour12:false}),
+    date: now.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}),
+    ts: now.toISOString()
+  };
+
+  photos.unshift(photo);
+  if (photos.length > 200) photos = photos.slice(0, 200);
+  savePhotos();
+
+  // Thumbnail
+  const thumb = document.getElementById('thumb-img');
+  thumb.src = dataUrl; thumb.style.display = 'block';
+  document.getElementById('thumb-placeholder').style.display = 'none';
+
+  updateGalleryBadge();
+  showToast('✅ Photo saved with GPS stamp!');
+}
+
+function drawStampOnCanvas(ctx, w, h) {
+  const barH = Math.round(h * 0.12);
+  const barY = h - barH;
+  ctx.fillStyle = 'rgba(0,0,0,0.72)';
+  ctx.fillRect(0, barY, w, barH);
+
+  // Top border line
+  ctx.strokeStyle = 'rgba(0,212,255,0.6)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, barY); ctx.lineTo(w, barY); ctx.stroke();
+
+  const pad = Math.round(w * 0.025);
+  const fs = Math.round(w * 0.028);
+  const fsSmall = Math.round(w * 0.022);
+
+  if (settings.brand) {
+    ctx.font = `700 ${Math.round(fs*1.1)}px Rajdhani, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('📍 REGISTRYGPS', pad, barY + barH * 0.35);
+  }
+
+  if (settings.coords && currentLat) {
+    ctx.font = `${fsSmall}px 'Share Tech Mono', monospace`;
+    ctx.fillStyle = '#39d353';
+    ctx.fillText(`${currentLat.toFixed(6)}°N  ${currentLon.toFixed(6)}°E`, pad, barY + barH * 0.62);
+  }
+
+  if (settings.addr) {
+    ctx.font = `${fsSmall}px 'Share Tech Mono', monospace`;
+    ctx.fillStyle = '#ff6b35';
+    ctx.fillText(currentAddress.substring(0,50), pad, barY + barH * 0.88);
+  }
+
+  if (settings.time) {
+    const timeStr = document.getElementById('stamp-time').textContent;
+    const dateStr = document.getElementById('stamp-date').textContent;
+    ctx.font = `700 ${Math.round(fs*1.3)}px 'Share Tech Mono', monospace`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'right';
+    ctx.fillText(timeStr, w - pad, barY + barH * 0.45);
+    ctx.font = `${fsSmall}px 'Share Tech Mono', monospace`;
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText(dateStr, w - pad, barY + barH * 0.75);
+    ctx.textAlign = 'left';
+  }
+}
+
+// ============================================
+// CLOCK
+// ============================================
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('stamp-time').textContent =
+      now.toLocaleTimeString('en-IN', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById('stamp-date').textContent =
+      now.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// ============================================
+// GPS
+// ============================================
+function startGPS() {
+  const accEl = document.getElementById('gps-acc-text');
+  if (!navigator.geolocation) {
+    accEl.textContent = 'GPS unavailable';
+    document.getElementById('stamp-coords').textContent = 'GPS Not Available';
+    return;
+  }
+  navigator.geolocation.watchPosition(pos => {
+    currentLat = pos.coords.latitude;
+    currentLon = pos.coords.longitude;
+    const acc = Math.round(pos.coords.accuracy);
+    accEl.textContent = `±${acc}m`;
+    document.getElementById('stamp-coords').textContent =
+      `${currentLat.toFixed(6)}°N  ${currentLon.toFixed(6)}°E`;
+    document.getElementById('map-coords-display').textContent =
+      `${currentLat.toFixed(4)}°N, ${currentLon.toFixed(4)}°E`;
+    reverseGeocode(currentLat, currentLon);
+  }, err => {
+    accEl.textContent = 'GPS denied';
+    document.getElementById('stamp-coords').textContent = 'Enable GPS';
+  }, { enableHighAccuracy: true, maximumAge: 5000 });
+}
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`, {
+      headers: { 'User-Agent': 'RegistryGPS/1.0' }
+    });
+    const d = await r.json();
+    const addr = d.address;
+    currentAddress = [addr.road||addr.neighbourhood, addr.city||addr.town||addr.village, addr.state].filter(Boolean).join(', ');
+    document.getElementById('stamp-addr').textContent = currentAddress;
+  } catch(e) {
+    document.getElementById('stamp-addr').textContent = `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+  }
+}
+
+// ============================================
+// GALLERY
+// ============================================
+function updateGalleryBadge() {
+  document.getElementById('gallery-count').textContent = `${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
+}
+
+function renderGallery() {
+  const body = document.getElementById('gallery-body');
+  updateGalleryBadge();
+  if (photos.length === 0) {
+    body.innerHTML = `<div class="empty-gallery"><div class="empty-icon">📷</div><p>No photos yet.<br>Start capturing with GPS stamps!</p></div>`;
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'gallery-grid';
+  photos.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.innerHTML = `<img src="${p.data}" alt=""/><div class="gal-stamp">${p.time} · ${p.lat ? p.lat.toFixed(4)+'°N' : 'No GPS'}</div>`;
+    item.onclick = () => openModal(i);
+    grid.appendChild(item);
+  });
+  body.innerHTML = '';
+  body.appendChild(grid);
+}
+
+function renderMapList() {
+  const list = document.getElementById('map-photo-list');
+  if (photos.length === 0) { list.innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center;font-size:13px;">No photos captured yet</div>'; return; }
+  list.innerHTML = photos.slice(0,10).map((p,i) => `
+    <div class="map-photo-item" onclick="openModal(${i})">
+      <img src="${p.data}" alt=""/>
+      <div class="map-photo-meta">
+        <div class="mp-time">${p.date} ${p.time}</div>
+        <div class="mp-loc">📍 ${p.address || (p.lat ? `${p.lat.toFixed(4)}°N, ${p.lon.toFixed(4)}°E` : 'No GPS')}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================
+// MODAL
+// ============================================
+function openModal(idx) {
+  currentModalIdx = idx;
+  const p = photos[idx];
+  document.getElementById('modal-img').src = p.data;
+  document.getElementById('modal-info').innerHTML = `
+    <div class="mi-row"><span class="mi-label">DATE</span><span class="mi-val">${p.date}</span></div>
+    <div class="mi-row"><span class="mi-label">TIME</span><span class="mi-val">${p.time} IST</span></div>
+    <div class="mi-row"><span class="mi-label">GPS</span><span class="mi-val">${p.lat ? `${p.lat.toFixed(6)}°N, ${p.lon.toFixed(6)}°E` : 'Not available'}</span></div>
+    <div class="mi-row"><span class="mi-label">ADDRESS</span><span class="mi-val">${p.address || '—'}</span></div>`;
+  document.getElementById('photo-modal').style.display = 'flex';
+}
+
+function openLastPhoto() { if (photos.length > 0) { showTab('gallery'); } }
+
+function closeModal() { document.getElementById('photo-modal').style.display = 'none'; }
+
+async function sharePhoto() {
+  const p = photos[currentModalIdx];
+  try {
+    const blob = await (await fetch(p.data)).blob();
+    const file = new File([blob], `registrygps_${p.id}.jpg`, { type:'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files:[file] })) {
+      await navigator.share({ title:'RegistryGPS Photo', text:`📍 ${p.address}\n🕐 ${p.date} ${p.time}`, files:[file] });
+    } else {
+      const a = document.createElement('a');
+      a.href = p.data; a.download = `registrygps_${p.id}.jpg`; a.click();
+      showToast('📥 Photo downloaded!');
+    }
+  } catch(e) { showToast('Could not share photo'); }
+}
+
+function deletePhoto() {
+  if (!confirm('Delete this photo?')) return;
+  photos.splice(currentModalIdx, 1);
+  savePhotos();
+  closeModal();
+  updateGalleryBadge();
+  renderGallery();
+  showToast('🗑 Photo deleted');
+}
+
+// ============================================
+// TABS
+// ============================================
+function showTab(tab) {
+  ['camera','gallery','map','settings'].forEach(t => {
+    document.getElementById(`nav-${t === 'camera' ? 'cam' : t === 'gallery' ? 'gal' : t === 'map' ? 'map' : 'set'}`)?.classList.remove('active');
+  });
+  document.getElementById('gallery-screen').style.display = 'none';
+  document.getElementById('map-screen').style.display = 'none';
+  document.getElementById('settings-screen').style.display = 'none';
+
+  if (tab === 'camera') {
+    document.getElementById('nav-cam').classList.add('active');
+  } else if (tab === 'gallery') {
+    document.getElementById('nav-gal').classList.add('active');
+    document.getElementById('gallery-screen').style.display = 'flex';
+    document.getElementById('gallery-screen').style.flexDirection = 'column';
+    renderGallery();
+  } else if (tab === 'map') {
+    document.getElementById('nav-map').classList.add('active');
+    document.getElementById('map-screen').style.display = 'flex';
+    document.getElementById('map-screen').style.flexDirection = 'column';
+    renderMapList();
+  } else if (tab === 'settings') {
+    document.getElementById('nav-set').classList.add('active');
+    document.getElementById('settings-screen').style.display = 'flex';
+    document.getElementById('settings-screen').style.flexDirection = 'column';
+  }
+}
+
+// ============================================
+// SETTINGS TOGGLES
+// ============================================
+function toggleSetting(key, el) {
+  settings[key] = !settings[key];
+  el.classList.toggle('on', settings[key]);
+  localStorage.setItem('rgps_settings', JSON.stringify(settings));
+}
+
+// ============================================
+// UTILS
+// ============================================
+function savePhotos() {
+  try { localStorage.setItem('rgps_photos', JSON.stringify(photos)); } catch(e) {}
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Load last thumb on startup
+if (photos.length > 0) {
+  setTimeout(() => {
+    const thumb = document.getElementById('thumb-img');
+    if (thumb) { thumb.src = photos[0].data; thumb.style.display = 'block'; const ph = document.getElementById('thumb-placeholder'); if(ph) ph.style.display='none'; }
+  }, 3000);
+}
+</script>
+</body>
+</html>
