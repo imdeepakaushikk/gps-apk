@@ -1,0 +1,26 @@
+{
+  "name": "RegistryGPS",
+  "short_name": "RegistryGPS",
+  "description": "Geo Timestamp Camera with GPS coordinates, address, date and time for India.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["navigation","utilities","productivity","business"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
